@@ -1,2 +1,2 @@
 #pragma once
-void hello_from_gpu();
+void assign_centroid(float* array,float* centroids);

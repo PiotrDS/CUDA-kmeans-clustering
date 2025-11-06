@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 project(kmeans_cuda LANGUAGES C CXX CUDA)
 
 find_package(CUDAToolkit REQUIRED)
+find_package(CUDA REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CUDA_STANDARD 17)
@@ -16,6 +17,8 @@ if(ENABLE_CUDA_DEBUG)
 else()
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -lineinfo") # add line information to all builds for debug tools (exclusive to -G option)
 endif()
+
+
 
 
 add_executable(kmeans_cuda
@@ -34,5 +37,6 @@ target_include_directories(kmeans_cuda PRIVATE
     ${PROJECT_SOURCE_DIR}/src/device
     ${PROJECT_SOURCE_DIR}/src/include
 )
+target_link_libraries(kmeans_cuda PRIVATE ${CUDA_LIBRARIES})
 
 
