@@ -7,9 +7,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static int N = 10;
-static int M = 10;
-static int K = 2;
+static int N = 20;
+static int M = 7;
+static int K = 3;
 
 int main() {
     
@@ -34,8 +34,12 @@ int main() {
     cudaMemcpy(cuda_array, array, N * M * sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(cuda_centroids, centroids, K * M * sizeof(float), cudaMemcpyHostToDevice);
 
-    assign_centroid(cuda_array, cuda_centroids);
+    assign_centroid(cuda_array, cuda_centroids,M,N,K);
+
+    cudaMemcpy(array, cuda_array, N * M * sizeof(float), cudaMemcpyDeviceToHost);
+
     cudaDeviceSynchronize();
+
 
     free(array);
     free(centroids);
