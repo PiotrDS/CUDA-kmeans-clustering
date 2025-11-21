@@ -3,10 +3,15 @@
 #include <cstdio>
 #include <cmath>
 
+__device__ float array_sum(float* array) {
+}
 
 __global__ void assign_centroid_cuda(float* array, float* centroids,int* labels ,int n, int m, int k) {
 
-    __shared__ float shared_centroids[1024];
+    __shared__ float shared_centroids[15]; //tutaj trzeba pokombinowac
+    __shared__ int shared_count[3];
+
+
 
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int idx = threadIdx.x;
@@ -23,6 +28,7 @@ __global__ void assign_centroid_cuda(float* array, float* centroids,int* labels 
     float dist_min = INFINITY;
     int min_cluster = 0;
     float dist = 0.0f;
+    int label;
     if (i < n) {
         for (int center = 0; center < k; center++) {
             dist = 0.0f;
@@ -48,6 +54,29 @@ __global__ void assign_centroid_cuda(float* array, float* centroids,int* labels 
             labels[i] = min_cluster;
 
         }
+
+        if (idx < k) {
+            for (int j = 0; j < m; j++) {
+                shared_centroids[idx * m + j] = 0;
+            }
+        }
+        __syncthreads();
+
+        for (int j = 0; j < m; j++) {
+            label = labels[i];
+            atomicAdd(&shared_centroids[label * m + j], array[i * m + j]);
+        }
+
+        atomicAdd(&shared_count[label], 1);
+
+        __syncthreads();
+
+        for (int j = 0; j < m; j++) {
+            label = labels[i];
+            shared_centroids[label * m + j] = shared_centroids[label * m + j] / shared_count[label];
+            centroids[label * m + j] = shared_centroids[label * m + j];
+        }
+
     }
     
 

@@ -85,6 +85,14 @@ int main() {
         printf("klaster obserwacji %d to: %d\n", i, labels[i]);
     }
 
+    for (int i = 0; i < K; i++) {
+        printf("wspo³rzedne %d-tego klastra to: [ ", i);
+        for (int j = 0; j < M; j++) {
+            printf("%f ", centroids[i*M+j]);
+        }
+        printf("]\n");
+    }
+
     // free memory
     free(array);
     free(centroids);
