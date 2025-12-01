@@ -1,24 +1,26 @@
 #include <cuda_runtime.h>
-#include "kmeans_utils.cuh"
+#include "device_utils.h"
 #include <cstdio>
 #include <cmath>
 
-__device__ float array_sum(float* array) {
-}
 
-__global__ void assign_centroid_cuda(float* array, float* centroids,int* labels ,int n, int m, int k) {
 
-    __shared__ float shared_centroids[15]; //tutaj trzeba pokombinowac
-    __shared__ int shared_count[3];
+__global__ void assign_centroid_cuda(float* array, float* centroids,int* labels ,int n, int m, int k, float threshold) {
+
+    __shared__ float shared_centroids[1024];
+    __shared__ int shared_count[50];
+    __shared__ int delta[1];
 
 
 
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int idx = threadIdx.x;
-    
+
+
+    // copy centroids to shared memory
     if (idx < k) {
         for (int j = 0; j < m; j++) {
-            shared_centroids[idx * m + j] = centroids[idx * m + j];
+            shared_centroids[idx * m + j] = array[idx * m + j];
         }
     }
     __syncthreads();
@@ -29,65 +31,78 @@ __global__ void assign_centroid_cuda(float* array, float* centroids,int* labels 
     int min_cluster = 0;
     float dist = 0.0f;
     int label;
+    delta[0] = n;
+    int iter = 0;
     if (i < n) {
-        for (int center = 0; center < k; center++) {
-            dist = 0.0f;
 
-            // calculate euclidean distance from centroid
-            for (int j = 0; j < m; j++) {
-                dist = dist + (array[i * m + j] - shared_centroids[center * m + j]) * (array[i * m + j] - shared_centroids[center * m + j]);
+        while ((float)delta[0] / (float)n > threshold && iter < 30) {
+            
+            // reset delta and shared_count
+            delta[0] = 0;
+            shared_count[i] = 0;
+
+            if (i == 0)
+                iter++;
+            for (int center = 0; center < k; center++) {
+                dist = 0.0f;
+
+                // calculate euclidean distance from centroid
+                for (int j = 0; j < m; j++) {
+                    dist = dist + (array[i * m + j] - shared_centroids[center * m + j]) * (array[i * m + j] - shared_centroids[center * m + j]);
+                }
+
+                __syncthreads();
+
+                // update minimum distance and current cluster
+                if (dist < dist_min) {
+                    dist_min = dist;
+                    min_cluster = center;
+                }
+
+
+                // assign centroid to observation
+                if (labels[i] != min_cluster) {
+                    atomicAdd(&delta[0],1);
+                    labels[i] = min_cluster;
+                }
+
             }
+            // reset old centroids
+            if (idx < k) {
+                for (int j = 0; j < m; j++) {
+                    shared_centroids[idx * m + j] = 0;
+                }
+            }
+            __syncthreads();
+
+            // calculate new centroids as mean of observation in each cluster
+            for (int j = 0; j < m; j++) {
+                label = labels[i];
+                atomicAdd(&shared_centroids[label * m + j], array[i * m + j]);
+            }
+
+            atomicAdd(&shared_count[label], 1);
 
             __syncthreads();
 
-            // printf("for observation %d distance from centroid %d is %f \n", i, center, dist);
-           
-            // update minimum distance and current cluster
-            if (dist < dist_min) {
-                dist_min = dist;
-                min_cluster = center;
-            }
-           
-            //printf("for observation %d centroid is %d and distance from it is %f \n", i, min_cluster, dist_min);
-
-            // assign centroid to observation
-            labels[i] = min_cluster;
-
-        }
-
-        if (idx < k) {
             for (int j = 0; j < m; j++) {
-                shared_centroids[idx * m + j] = 0;
+                label = labels[i];
+                if(shared_count[label]!=0) shared_centroids[label * m + j] = shared_centroids[label * m + j] / shared_count[label];
+                centroids[label * m + j] = shared_centroids[label * m + j];
             }
         }
-        __syncthreads();
-
-        for (int j = 0; j < m; j++) {
-            label = labels[i];
-            atomicAdd(&shared_centroids[label * m + j], array[i * m + j]);
-        }
-
-        atomicAdd(&shared_count[label], 1);
-
-        __syncthreads();
-
-        for (int j = 0; j < m; j++) {
-            label = labels[i];
-            shared_centroids[label * m + j] = shared_centroids[label * m + j] / shared_count[label];
-            centroids[label * m + j] = shared_centroids[label * m + j];
-        }
-
     }
     
 
 }
 
 
-void assign_centroid(float* array, float* centroids, int* labels, int N, int M, int K) {
+
+void assign_centroid(float* array, float* centroids, int* labels, int N, int M, int K, float THRESHOLD) {
 
     int threads = 256;
     // calculate number of blocks
     int blocks = (N + threads - 1) / threads;
     // launch kernel
-    assign_centroid_cuda << <blocks, threads >> > (array, centroids,labels, N,M,K);
+    assign_centroid_cuda << <blocks, threads >> > (array, centroids,labels, N,M,K, THRESHOLD);
 }
