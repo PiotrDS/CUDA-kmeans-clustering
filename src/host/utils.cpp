@@ -5,10 +5,11 @@
 #include <ctype.h>
 #include <time.h>
 #include <cmath>
+#include <chrono>
+using namespace std::chrono;
 
-
-// function to generate array of random point drafted from [-10,10) interval
-float* generate_random_array(int n, int m) {
+// function to generate array of random point drafted from [-range,range) interval
+float* generate_random_array(int n, int m, int range) {
     
     float* array = (float*)malloc(n * m * sizeof(float));
     if (!array) {
@@ -18,7 +19,7 @@ float* generate_random_array(int n, int m) {
     srand((unsigned int)time(NULL));
 
     for (int i = 0; i < n * m; i++) {
-        array[i] = 20 * ((float)rand() / (float)RAND_MAX) - 10; 
+        array[i] = 2 * range* ((float)rand() / (float)RAND_MAX) - range;
     }
 
     return array;
@@ -64,6 +65,8 @@ int save_labels_csv(const char* filename,
 
 
 int cpu_kmeans(float* array, float* centroids,int* labels ,int N, int M, int K, float THRESHOLD) {
+
+    auto start = high_resolution_clock::now(); // start pomiaru
     
     // initilize centroids as first k observation
     for (int i = 0; i < K; i++) {
@@ -137,6 +140,10 @@ int cpu_kmeans(float* array, float* centroids,int* labels ,int N, int M, int K, 
     }
 
     free(counts);
+
+    auto stop = high_resolution_clock::now(); 
+    auto duration = duration_cast<milliseconds>(stop - start); 
+    printf("CPU execution time: %lld ms\n", duration.count());
 
     return 0;
 

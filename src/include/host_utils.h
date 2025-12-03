@@ -2,7 +2,8 @@
 #define HOST_UTILS_H
 
 float* generate_random_array(int n, 
-    int m);
+    int m,
+    int range);
 
 
 int save_array_csv(const char* filename,

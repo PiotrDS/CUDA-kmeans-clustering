@@ -24,6 +24,7 @@ endif()
 add_executable(kmeans_cuda
     src/host/main.cpp
     src/device/kmeans_kernel.cu
+    src/host/utils.cpp
 )
 
 target_compile_options(kmeans_cuda PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--extended-lambda>)
