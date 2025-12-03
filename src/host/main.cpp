@@ -72,10 +72,16 @@ int main(int argc, char** argv) {
 
 
     
-    float* array = generate_random_array(N, M, 1000);
+    float* array = generate_random_array(N, M, 1000000);
     float* centroids = (float*)malloc(K * M * sizeof(float));
     int* labels = (int*)malloc(N * sizeof(int));
 
+    for (int i = 0; i < K; i++) {
+        for (int j = 0; j < K; j++) {
+            centroids[i * M + j] = array[i * M + j];
+        }
+    }
+    
     if (gpu) {
 
         cudaEvent_t start, stop;
