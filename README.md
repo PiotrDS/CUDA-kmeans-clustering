@@ -3,7 +3,9 @@
 This program implements the **K-Means Clustering Algorithm** with support for both **GPU (CUDA)** and **CPU** execution. It allows you to generate random data, run K-Means algorithm, and save results to CSV files.
 
 ---
-
+<p align="center">
+  <img src="imgs/img.png" />
+</p>
 ## Getting Started
 ### Prerequisites
 Download and install the CUDA Toolkit for your corresponding platform. For system requirements and installation instructions of [cuda toolkit](https://developer.nvidia.com/cuda-downloads), please refer to the [Linux Installation Guide](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/), and the [Windows Installation Guide](https://docs.nvidia.com/cuda/cuda-installation-guide-microsoft-windows/index.html).
